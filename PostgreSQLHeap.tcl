@@ -79,8 +79,9 @@ proc read_infomask2 {} {
             set name [dict get $infomask2_flags $mask]
             evaluate_mask $value $mask $name
         }
-        return $attr_count
+        
     }
+    return $attr_count
 }
 
 
@@ -118,7 +119,6 @@ section "PostgreSQL database page" {
 
                 entry "Flags" [item_info_flags [expr $flags >> 15 ]]
                 entry "Length" $length
-                
             }
             incr item_index
         }
@@ -138,9 +138,25 @@ section "PostgreSQL database page" {
                     uint32 "Command ID"
                     uint32 "CTID1"
                     uint16 "CTID2"
-                    read_infomask2
+                    set attributes [read_infomask2]
                     read_infomask
                     set header_length [uint8 "Header Size including bitmap and padding"]
+                    set bitmask 1
+                    set byte [uint8]
+                    section "null attributes" {
+                        for { set column 0}  {$column < $attributes} {incr column} {
+                            if { [expr $byte & $bitmask] == $bitmask } {
+                                entry "Column $column" "NOT NULL"
+                            } else {
+                                entry "Column $column" "NULL"
+                            }
+                            set bitmask [expr $bitmask << 1]
+                            if { [expr $column % 7] == 0 && [expr $column != 0] } {
+                                set bitmask 1
+                                set byte [uint8]
+                            }
+                        }
+                    }
                 }
                 set data_length [expr [dict get $data_items($index) "length"] - $header_length]
                 goto [expr $item_start + $header_length]
