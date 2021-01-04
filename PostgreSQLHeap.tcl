@@ -67,7 +67,8 @@ set infomask2_flags [dict create \
 ]
 
 
-### Rad the infomask2 and set the values as hexfield entires.
+### Read the infomask2 and set the values as hexfield entires,
+### returning the number of attributes
 proc read_infomask2 {} {
     global infomask2_flags
     set value [uint16 "Infomask 2"]
@@ -78,6 +79,7 @@ proc read_infomask2 {} {
             set name [dict get $infomask2_flags $mask]
             evaluate_mask $value $mask $name
         }
+        return $attr_count
     }
 }
 
