@@ -85,6 +85,7 @@ proc read_infomask2 {} {
 }
 
 
+
 section "PostgreSQL database page" {
     set start [pos]
     section "PageHeaderData" {
@@ -107,7 +108,7 @@ section "PostgreSQL database page" {
     section "Item Info" {
         set item_index 0
 
-        while {[pos] < $free_start} {
+        while {[pos] < [expr $free_start + $start]} {
             
             section "Item $item_index" {
                 set value [uint32 "ItemIdData Value"]
@@ -123,8 +124,9 @@ section "PostgreSQL database page" {
             incr item_index
         }
     }
-
-    bytes [expr $free_end - $free_start ] "Free Space"
+    if {[expr [expr $free_end + $start] - [expr $free_start + $start] ] > 0} {
+        bytes [expr $free_end - $free_start ] "Free Space"
+    }
     section "Item Data" {
         for { set index 0 }  { $index < [array size data_items] }  { incr index } {
             section "Item Data $index" {
@@ -158,7 +160,10 @@ section "PostgreSQL database page" {
                         }
                     }
                 }
+                set p [pos]
+                 
                 set data_length [expr [dict get $data_items($index) "length"] - $header_length]
+                puts "Read Page Contents at $item_start (read $data_length bytes)"
                 goto [expr $item_start + $header_length]
                 section "Data" {
                     bytes $data_length "data"
